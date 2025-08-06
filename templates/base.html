@@ -35,6 +35,21 @@
       max-width: 95%;
       border: 2px solid #22a35d;
     }
+
+    /* Навигационные кнопки — отдельный класс */
+    .nav-btn {
+      padding: .5rem 1rem;
+      border-radius: .5rem;
+      transition: background .2s ease, transform .15s ease;
+    }
+    .nav-btn:hover {
+      background-color: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+    /* Убираем общий btn-hover для навбара */
+    .navbar .btn-hover {
+      transition: none !important;
+    }
   </style>
 </head>
 <body>
@@ -51,15 +66,18 @@
         <div class="collapse navbar-collapse" id="navbarMenu">
           <ul class="navbar-nav ms-auto align-items-center gap-2">
             <li class="nav-item">
-              <a class="nav-link btn btn-outline-light btn-lg py-2 px-3" href="{% url 'collection_cards' %}">Каталог</a>
+              <a class="nav-link nav-btn btn-outline-light btn-lg" href="{% url 'collection_cards' %}">Каталог</a>
             </li>
             {% if user.is_authenticated %}
             <li class="nav-item">
-              <a class="nav-link btn btn-success btn-lg py-2 px-3" href="{% url 'batch_list' %}">🚚 Логистика</a>
+              <a class="nav-link nav-btn btn-success btn-lg" href="{% url 'batch_list' %}">🚚 Логистика</a>
             </li>
             {% endif %}
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle btn btn-outline-light btn-lg py-2 px-3" href="#" id="collectionDropdown" role="button" data-bs-toggle="dropdown">Коллекции</a>
+              <a class="nav-link dropdown-toggle nav-btn btn-outline-light btn-lg"
+                 href="#" id="collectionDropdown" role="button" data-bs-toggle="dropdown">
+                Коллекции
+              </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 {% for coll in header_collections %}
                   <li><a class="dropdown-item fs-5 py-2" href="{% url 'collection_detail' coll.id %}">{{ coll.name }}</a></li>
@@ -74,12 +92,12 @@
             <li class="nav-item">
               <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
-                <button class="btn btn-outline-light btn-lg py-2 px-3" type="submit">Выйти</button>
+                <button class="nav-btn btn btn-outline-light btn-lg" type="submit">Выйти</button>
               </form>
             </li>
             {% else %}
             <li class="nav-item">
-              <a class="nav-link btn btn-outline-light btn-lg py-2 px-3" href="{% url 'login' %}">Войти</a>
+              <a class="nav-link nav-btn btn-outline-light btn-lg" href="{% url 'login' %}">Войти</a>
             </li>
             {% endif %}
           </ul>
