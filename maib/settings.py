@@ -35,6 +35,14 @@ ALLOWED_HOSTS = [
     'localhost'
 ]
 
+# доверяем запросам с этого origin (Django 4.0+ требует полный URL с https://)
+CSRF_TRUSTED_ORIGINS = [
+    'https://catalognew-production.up.railway.app',
+]
+
+# если вы сидите за прокси (Railway), чтобы правильно определялась схема HTTPS:
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # --- 🔹 5. Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -1,112 +1,87 @@
 {% extends 'base.html' %}
-{% block title %}
-    {% if collection %}Изменить коллекцию{% else %}Добавить коллекцию{% endif %}
-{% endblock %}
+{% block title %}{% if collection %}Изменить коллекцию{% else %}Добавить коллекцию{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <div class="mx-auto p-4 p-md-5 rounded-4 shadow-sm"
-       style="max-width: 500px; background: #fff;">
-    <h2 class="text-center mb-4 fw-bold" style="color: #232346; font-size: 1.5em; letter-spacing: .6px;">
-      {% if collection %}Изменить коллекцию{% else %}Добавить коллекцию{% endif %}
-    </h2>
+<div class="container-fluid px-3 py-4 d-flex justify-content-center">
+  <div class="w-100" style="max-width: 400px;">
+    <div class="p-4 rounded-3 shadow-sm bg-white">
 
-    <form method="post">
-      {% csrf_token %}
+      <h2 class="text-center mb-4 fw-bold fs-4">
+        {% if collection %}Изменить коллекцию{% else %}Добавить коллекцию{% endif %}
+      </h2>
 
-      <div class="mb-3">
-        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold" style="color: #232346;">
-          Название коллекции:
-        </label>
-        {{ form.name }}
-      </div>
+      <form method="post" class="row g-3">
+        {% csrf_token %}
 
-      <div class="mb-3">
-        <label class="form-label fw-semibold" style="color: #232346;">Основные цвета:</label>
-        <div id="color-pickers" class="d-flex flex-column gap-2 mb-2"></div>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addColorPicker()">+ Добавить цвет</button>
-        <input type="hidden" name="main_colors" id="mainColorsInput">
-        <small class="form-text text-muted">Максимум 8. Пример: <code>#ffffff, #000000</code></small>
-      </div>
+        <div class="col-12">
+          <label for="{{ form.name.id_for_label }}" class="form-label fs-5 fw-semibold">
+            Название коллекции
+          </label>
+          {{ form.name|add_class:"form-control form-control-lg" }}
+          {% if form.name.errors %}
+            <div class="text-danger small mt-1">{{ form.name.errors|striptags }}</div>
+          {% endif %}
+        </div>
 
-      <div class="d-flex justify-content-center gap-3 mt-4">
-        <button type="submit"
-                class="btn text-white fw-semibold px-4 py-2"
-                style="background: linear-gradient(90deg, #24243c 60%, #353560 100%);
-                       border-radius: 10px; font-size: 1.07em; box-shadow: 0 2px 8px #0001;"
-                onmouseover="this.style.background='linear-gradient(90deg,#252525 50%,#2b7aeb 100%)'; this.style.color='#ffd700'; this.style.transform='scale(1.03)'"
-                onmouseout="this.style.background='linear-gradient(90deg, #24243c 60%, #353560 100%)'; this.style.color='#fff'; this.style.transform='none'">
-          Сохранить
-        </button>
-        <a href="{% url 'collection_list' %}" class="btn btn-outline-secondary fw-semibold px-3 py-2"
-           style="border-radius: 10px; font-size: 1.07em;">
-          Отмена
-        </a>
-      </div>
-    </form>
+        <div class="col-12">
+          <label class="form-label fs-5 fw-semibold">Основные цвета</label>
+          <div id="color-pickers" class="d-flex flex-column gap-2 mb-2"></div>
+          <button type="button" class="btn btn-outline-secondary btn-sm w-100"
+                  id="addColorBtn">+ Добавить цвет</button>
+          <input type="hidden" name="main_colors" id="mainColorsInput">
+          <div class="form-text small text-muted">Максимум 8. Формат: <code>#ffffff</code></div>
+        </div>
+
+        <div class="col-12 d-grid gap-2">
+          <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+          <a href="{% url 'collection_list' %}" class="btn btn-outline-secondary btn-lg">
+            Отмена
+          </a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
 <script>
-function addColorPicker(defaultColor = '#cccccc') {
-    const container = document.getElementById('color-pickers');
-    if (container.children.length >= 8) return;
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('color-pickers');
+  const hiddenInput = document.getElementById('mainColorsInput');
+  const max = 8;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'd-flex align-items-center gap-2';
+  function updateHidden() {
+    const vals = [...container.querySelectorAll('input[type=text]')]
+      .map(i=>i.value).filter(v=>v);
+    hiddenInput.value = vals.join(', ');
+  }
 
-    const colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.value = defaultColor;
-    colorInput.className = 'form-control form-control-color';
-    colorInput.style.width = '48px';
-    colorInput.style.height = '48px';
-    colorInput.style.border = 'none';
-    colorInput.style.borderRadius = '6px';
-    colorInput.style.cursor = 'pointer';
-    colorInput.style.boxShadow = '0 2px 6px #0001';
+  function addPicker(color='#cccccc') {
+    if (container.children.length>=max) return;
+    const row = document.createElement('div');
+    row.className='d-flex gap-2';
 
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.value = defaultColor;
-    textInput.placeholder = '#ffffff';
-    textInput.maxLength = 7;
-    textInput.pattern = "^#(?:[0-9a-fA-F]{3}){1,2}$";
-    textInput.className = 'form-control';
-    textInput.style.flex = '1';
+    const c = document.createElement('input');
+    c.type='color'; c.value=color;
+    c.className='form-control form-control-color';
+    c.style.width='48px'; c.style.padding=0;
 
-    colorInput.addEventListener('input', () => {
-        textInput.value = colorInput.value;
-        updateMainColors();
-    });
+    const t = document.createElement('input');
+    t.type='text'; t.value=color;
+    t.placeholder='#ffffff'; t.maxLength=7;
+    t.className='form-control';
 
-    textInput.addEventListener('input', () => {
-        const val = textInput.value;
-        if (/^#(?:[0-9a-fA-F]{3}){1,2}$/.test(val)) {
-            colorInput.value = val;
-            updateMainColors();
-        }
-    });
+    c.oninput = ()=>{ t.value=c.value; updateHidden(); };
+    t.oninput = ()=>{ if(/^#([0-9A-Fa-f]{6})$/.test(t.value)){ c.value=t.value; updateHidden(); } };
 
-    wrapper.appendChild(colorInput);
-    wrapper.appendChild(textInput);
-    container.appendChild(wrapper);
-    updateMainColors();
-}
+    row.append(c,t);
+    container.append(row);
+    updateHidden();
+  }
 
-function updateMainColors() {
-    const textInputs = document.querySelectorAll('#color-pickers input[type="text"]');
-    const colors = Array.from(textInputs).map(input => input.value.trim());
-    document.getElementById('mainColorsInput').value = colors.join(', ');
-}
-
-window.onload = function () {
-    const initial = "{{ form.initial.main_colors|default:'' }}";
-    if (initial) {
-        initial.split(',').forEach(c => addColorPicker(c.trim()));
-    } else {
-        addColorPicker('#cccccc');
-    }
-}
+  document.getElementById('addColorBtn').addEventListener('click', ()=>addPicker());
+  const initial = "{{ form.initial.main_colors|default:'' }}";
+  if(initial) initial.split(',').forEach(c=>addPicker(c.trim()));
+  else addPicker();
+});
 </script>
 {% endblock %}

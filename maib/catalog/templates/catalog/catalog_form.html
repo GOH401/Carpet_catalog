@@ -3,165 +3,110 @@
 
 {% block content %}
 <style>
-    .form-card {
-        max-width: 640px;
-        margin: 44px auto;
-        background: #fff;
-        border-radius: 22px;
-        box-shadow: 0 8px 32px #0002;
-        padding: 36px;
-        border: 1.5px solid #eaeaea;
+  .form-card {
+    max-width: 100%;
+    width: 100%;
+    margin: 1rem auto;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    border: 1px solid #e5e5e5;
+  }
+  .form-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .form-label {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+  .form-control, .form-select {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+  }
+  .btn-save {
+    font-size: 1.15rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+  .btn-cancel {
+    font-size: 1.05rem;
+    padding: 0.75rem;
+    text-decoration: none;
+  }
+  .thread-header, .thread-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 2fr;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .thread-header div {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  @media (max-width: 768px) {
+    .thread-header, .thread-row {
+      grid-template-columns: 1fr;
     }
-
-    .form-title {
-        font-size: 1.9em;
-        font-weight: 700;
-        margin-bottom: 26px;
-        color: #222;
-    }
-
-    .form-control:focus {
-        border-color: #2b7aeb;
-        background-color: #fff;
-        box-shadow: 0 0 0 0.12rem rgba(43, 122, 235, 0.25);
-    }
-
-    .btn-save {
-        background: linear-gradient(90deg, #181818 40%, #2b7aeb 100%);
-        color: #fff;
-        font-weight: 600;
-        font-size: 1.05em;
-        border: none;
-        border-radius: 9px;
-        padding: 12px 32px;
-        box-shadow: 0 2px 8px #0001;
-        cursor: pointer;
-        transition: background 0.2s, transform 0.13s;
-    }
-
-    .btn-save:hover {
-        background: linear-gradient(90deg, #252525 40%, #84b7f7 100%);
-        color: #ffd700;
-        transform: translateY(-1.5px) scale(1.03);
-    }
-
-    .btn-cancel {
-        color: #2b7aeb;
-        font-size: 1.05em;
-        text-decoration: underline;
-        background: none;
-        border: none;
-        padding: 8px 0;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: color 0.16s;
-    }
-
-    .btn-cancel:hover {
-        color: #ea4d4d;
-    }
-
-    .errorlist {
-        color: #f64949;
-        font-size: 0.95em;
-        margin-top: 4px;
-        padding-left: 0;
-        list-style: none;
-    }
-
-    .thread-type-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .thread-header,
-    .thread-row {
-        display: grid;
-        grid-template-columns: 1fr 2fr 1fr 2fr;
-        gap: 12px;
-        align-items: center;
-    }
-
-    .thread-header div {
-        font-size: 0.9em;
-        font-weight: 500;
-        color: #555;
-        text-align: left;
-        padding-left: 4px;
-    }
-
-    .thread-row select {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1.2px solid #ccc;
-        border-radius: 7px;
-        background: #fafafa;
-        font-size: 1em;
-    }
-
-    .thread-row select:focus {
-        border-color: #2b7aeb;
-        background: #fff;
-    }
-
-    @media (max-width: 600px) {
-        .form-card { padding: 20px; }
-        .form-title { font-size: 1.5em; }
-    }
+  }
 </style>
 
 <div class="form-card">
-    <div class="form-title">{% if carpet %}Редактировать ковер{% else %}Добавить ковер{% endif %}</div>
+  <div class="form-title">
+    {% if carpet %}Редактировать ковер{% else %}Добавить ковер{% endif %}
+  </div>
 
-    <form method="post" enctype="multipart/form-data" autocomplete="off">
-        {% csrf_token %}
+  <form method="post" enctype="multipart/form-data" autocomplete="off" class="row g-3">
+    {% csrf_token %}
+    {% for field in form.visible_fields %}
+      <div class="col-12">
+        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+        {{ field|add_class:"form-control" }}
+        {% if field.errors %}
+          <div class="text-danger small mt-1">
+            {{ field.errors|striptags }}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
 
-        {% for field in form.visible_fields %}
-        <div class="mb-3">
-            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-            {{ field }}
-            {{ field.errors }}
+    <!-- Вид нитей -->
+    <div class="col-12">
+      <label class="form-label">Вид нитей:</label>
+      <div class="thread-header mb-2">
+        <div>%</div><div>Нить 1</div><div>%</div><div>Примечание</div>
+      </div>
+      <div class="thread-row mb-1">
+        {{ form.thread_type.0|add_class:"form-select" }}
+        {{ form.thread_type.1|add_class:"form-select" }}
+        {{ form.thread_type.2|add_class:"form-select" }}
+        {{ form.thread_type.3|add_class:"form-control" }}
+      </div>
+      {% if form.thread_type.errors %}
+        <div class="text-danger small">
+          {{ form.thread_type.errors|striptags }}
         </div>
-        {% endfor %}
+      {% endif %}
+    </div>
 
-        <!-- Вид нитей -->
-        <div class="mb-3">
-            <label class="form-label">Вид нитей:</label>
-            <div class="thread-type-wrapper">
-                <div class="thread-header">
-                    <div>%</div>
-                    <div>Нить 1</div>
-                    <div>%</div>
-                    <div>Примечание</div>
-                </div>
-                <div class="thread-row">
-                    {{ form.thread_type.0 }}
-                    {{ form.thread_type.1 }}
-                    {{ form.thread_type.2 }}
-                    {{ form.thread_type.3 }}
-                </div>
-            </div>
-            {% if form.thread_type.errors %}
-            <ul class="errorlist">
-                {% for error in form.thread_type.errors %}
-                <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        </div>
-
-        <!-- Кнопки -->
-        <div class="d-flex gap-3 mt-4">
-            <button type="submit" class="btn-save">Сохранить</button>
-            {% if carpet %}
-                <a href="{% url 'collection_detail' carpet.collection.id %}" class="btn-cancel">Отмена</a>
-            {% elif collection_id %}
-                <a href="{% url 'collection_detail' collection_id %}" class="btn-cancel">Отмена</a>
-            {% else %}
-                <a href="{% url 'collection_cards' %}" class="btn-cancel">Отмена</a>
-            {% endif %}
-        </div>
-    </form>
+    <!-- Кнопки -->
+    <div class="col-12 d-grid gap-2">
+      <button type="submit" class="btn btn-primary btn-lg btn-save">Сохранить</button>
+      {% if carpet %}
+        <a href="{% url 'collection_detail' carpet.collection.id %}"
+           class="btn btn-outline-secondary btn-lg btn-cancel">Отмена</a>
+      {% elif collection_id %}
+        <a href="{% url 'collection_detail' collection_id %}"
+           class="btn btn-outline-secondary btn-lg btn-cancel">Отмена</a>
+      {% else %}
+        <a href="{% url 'collection_cards' %}"
+           class="btn btn-outline-secondary btn-lg btn-cancel">Отмена</a>
+      {% endif %}
+    </div>
+  </form>
 </div>
 {% endblock %}

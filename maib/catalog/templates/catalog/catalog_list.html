@@ -1,182 +1,115 @@
+{# templates/catalog_list.html #}
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Каталог ковров{% endblock %}
 
 {% block content %}
-<style>
-    .carpet-card {
-        background: #fff;
-        border-radius: 20px;
-        box-shadow: 0 4px 24px 0 #0002;
-        padding: 26px 20px 22px 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        transition: box-shadow 0.2s, transform 0.17s;
-        min-height: 360px;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid #e5e5e5;
-    }
-
-    .carpet-card:hover {
-        box-shadow: 0 12px 38px 0 #1113, 0 2px 6px #0002;
-        transform: translateY(-8px) scale(1.025);
-        border-color: #2b7aeb44;
-    }
-
-    .carpet-img {
-        width: 196px;
-        height: 226px;
-        object-fit: cover;
-        border-radius: 12px;
-        box-shadow: 0 4px 18px #0001;
-        margin-bottom: 21px;
-        transition: transform 0.18s;
-        background: #f7f7f7;
-    }
-
-    .carpet-card:hover .carpet-img {
-        transform: scale(1.07) rotate(-1deg);
-    }
-
-    .carpet-title {
-        font-size: 1.17em;
-        font-weight: 700;
-        margin-bottom: 8px;
-        color: #222;
-        letter-spacing: 0.3px;
-        text-align: center;
-    }
-
-    .carpet-info {
-        font-size: 1.03em;
-        color: #4b4b4b;
-        line-height: 1.6;
-        text-align: left;
-        width: 100%;
-        letter-spacing: 0.04em;
-        margin-top: 2px;
-    }
-
-    .no-photo {
-        width: 196px;
-        height: 226px;
-        background: repeating-linear-gradient(45deg, #eee, #eaeaea 10px, #fff 14px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        color: #bbb;
-        margin-bottom: 21px;
-        font-size: 1.02em;
-    }
-</style>
-
-<div class="container py-4">
-
-    <!-- Заголовок + кнопка -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
-        <div>
-            <h1 class="fw-bold">Каталог ковров</h1>
-            {% if collection and page_obj %}
-            <div class="mt-2">
-                <p class="mb-2">
-                    Коллекция:
-                    {% with page_obj|first as first_carpet %}
-                    <span class="badge bg-dark text-warning">{{ first_carpet.collection.name }}</span>
-                    {% endwith %}
-                </p>
-                {% with page_obj|first as first_carpet %}
-                {% if first_carpet.collection.get_main_colors_list %}
-                <div class="d-flex align-items-center flex-wrap gap-2">
-                    <span class="fw-medium">Основные цвета:</span>
-                    {% for color in first_carpet.collection.get_main_colors_list %}
-                    <span title="{{ color }}" class="rounded-circle" style="width: 22px; height: 22px; background: {{ color }}; border: 1px solid #ccc; box-shadow: 0 1px 5px #0001;"></span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% endwith %}
-            </div>
-            {% endif %}
-        </div>
-        {% if user.is_authenticated %}
-        <a href="{% url 'carpet_create' %}" class="btn btn-dark px-4">+ Добавить ковер</a>
-        {% endif %}
-    </div>
-
-    <!-- Форма поиска -->
-    <form method="get" class="row gy-2 gx-3 align-items-end mb-4">
-        <div class="col-md-4">
-            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Название ковра или коллекции">
-        </div>
-        <div class="col-md-2">
-            <select name="color" class="form-select">
-                <option value="">Все цвета</option>
-                {% for c in all_colors %}
-                <option value="{{ c }}" {% if color == c %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select name="style" class="form-select">
-                <option value="">Все стили</option>
-                {% for s in all_styles %}
-                <option value="{{ s }}" {% if style == s %}selected{% endif %}>{{ s }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select name="collection" class="form-select">
-                <option value="">Все коллекции</option>
-                {% for col in all_collections %}
-                <option value="{{ col.id }}" {% if col.id|stringformat:"s" == collection %}selected{% endif %}>{{ col.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-primary w-100">Найти</button>
-        </div>
-    </form>
-
-    <!-- Сетка карточек -->
-    <div class="row g-4">
-        {% for carpet in page_obj %}
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <a href="{% url 'carpet_detail' carpet.pk %}" class="text-decoration-none text-dark">
-                <div class="carpet-card">
-                    {% if carpet.image %}
-                    <!-- Заменили .image.url на .image -->
-                    <img src="{{ carpet.image }}" alt="{{ carpet.name }}" class="carpet-img">
-                    {% else %}
-                    <div class="no-photo">Нет фото</div>
-                    {% endif %}
-                    <div class="carpet-title">{{ carpet.name }}</div>
-                    <div class="carpet-info">
-                        <b>Код:</b> {{ carpet.code }}<br>
-                        <b>Цвет:</b> {{ carpet.color }}<br>
-                        <b>Стиль:</b> {{ carpet.style }}<br>
-                        <b>Коллекция:</b> {{ carpet.collection.name }}
-                    </div>
-                </div>
-            </a>
-        </div>
-        {% empty %}
-        <p class="text-center text-muted fs-5">Ковры не найдены.</p>
-        {% endfor %}
-    </div>
-
-    <!-- Пагинация -->
-    {% if page_obj.has_other_pages %}
-    <div class="d-flex justify-content-center align-items-center gap-3 mt-5 flex-wrap">
-        {% if page_obj.has_previous %}
-        <a href="?{% if query %}q={{ query }}&{% endif %}{% if color %}color={{ color }}&{% endif %}{% if style %}style={{ style }}&{% endif %}{% if collection %}collection={{ collection }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-outline-secondary">← Назад</a>
-        {% endif %}
-        <span class="fw-semibold">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}
-        <a href="?{% if query %}q={{ query }}&{% endif %}{% if color %}color={{ color }}&{% endif %}{% if style %}style={{ style }}&{% endif %}{% if collection %}collection={{ collection }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-outline-secondary">Вперёд →</a>
-        {% endif %}
-    </div>
+<div class="container-fluid px-3 py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+    <h1 class="fw-bold fs-1 mb-2">Каталог ковров</h1>
+    {% if user.is_authenticated %}
+      <a href="{% url 'carpet_create' %}" class="btn btn-dark btn-lg">+ Добавить ковер</a>
     {% endif %}
+  </div>
+
+  <form method="get" class="row gx-2 gy-2 align-items-end mb-4">
+    <div class="col-12 col-sm-6 col-md-4">
+      <input type="text" name="q" value="{{ query }}"
+             class="form-control form-control-lg"
+             placeholder="Название или коллекция">
+    </div>
+    <div class="col-12 col-sm-6 col-md-2">
+      <select name="color" class="form-select form-select-lg">
+        <option value="">Все цвета</option>
+        {% for c in all_colors %}
+          <option value="{{ c }}" {% if color == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-sm-6 col-md-2">
+      <select name="style" class="form-select form-select-lg">
+        <option value="">Все стили</option>
+        {% for s in all_styles %}
+          <option value="{{ s }}" {% if style == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+      <select name="collection" class="form-select form-select-lg">
+        <option value="">Все коллекции</option>
+        {% for col in all_collections %}
+          <option value="{{ col.id }}" {% if col.id|stringformat:"s" == collection %}selected{% endif %}>
+            {{ col.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-1">
+      <button type="submit" class="btn btn-primary btn-lg w-100">Найти</button>
+    </div>
+  </form>
+
+  <div class="row gx-2 gy-3">
+    {% for carpet in page_obj %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <a href="{% url 'carpet_detail' carpet.pk %}" class="text-decoration-none text-dark">
+          <div class="card h-100 shadow-sm">
+            {% if carpet.image %}
+              <img src="{{ carpet.image }}"
+                   class="card-img-top"
+                   style="width:100%; object-fit: cover;"
+                   alt="{{ carpet.name }}">
+            {% else %}
+              <div class="bg-light d-flex align-items-center justify-content-center"
+                   style="aspect-ratio:4/5;">
+                <span class="text-muted fs-5">Нет фото</span>
+              </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column p-3">
+              <h2 class="card-title fs-4 mb-2 text-center">{{ carpet.name }}</h2>
+              <p class="card-text mb-2">
+                <small><b>Код:</b> {{ carpet.code }}</small><br>
+                <small><b>Цвет:</b> {{ carpet.color }}</small>
+              </p>
+              <div class="mt-auto d-flex justify-content-center gap-1">
+                <span class="badge bg-secondary fs-6">{{ carpet.style }}</span>
+                <span class="badge bg-info text-dark fs-6">{{ carpet.collection.name }}</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    {% empty %}
+      <div class="col-12 text-center py-5">
+        <p class="text-muted fs-4">Ковры не найдены.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <nav class="mt-4 d-flex justify-content-center">
+      <ul class="pagination pagination-lg">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+               aria-label="Назад">←</a>
+          </li>
+        {% endif %}
+        {% for i in page_obj.paginator.page_range %}
+          <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+            <a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a>
+          </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+               aria-label="Вперёд">→</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
 
 </div>
 {% endblock %}
