@@ -3,6 +3,7 @@
 
 {% block content %}
 <style>
+  /* Общие стили формы */
   .form-card {
     max-width: 100%;
     width: 100%;
@@ -28,16 +29,8 @@
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
   }
-  .btn-save {
-    font-size: 1.15rem;
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-  }
-  .btn-cancel {
-    font-size: 1.05rem;
-    padding: 0.75rem;
-    text-decoration: none;
-  }
+
+  /* Grid для нитей */
   .thread-header, .thread-row {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr 2fr;
@@ -53,6 +46,24 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* Hover-эффекты на кнопках */
+  .btn-hover {
+    transition: transform .15s ease, background .2s ease;
+  }
+  .btn-hover:hover {
+    transform: translateY(-2px);
+  }
+  .btn-save {
+    font-size: 1.15rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+  .btn-cancel {
+    font-size: 1.05rem;
+    padding: 0.75rem;
+    text-decoration: none;
+  }
 </style>
 
 <div class="form-card">
@@ -62,14 +73,13 @@
 
   <form method="post" enctype="multipart/form-data" autocomplete="off" class="row g-3">
     {% csrf_token %}
+
     {% for field in form.visible_fields %}
       <div class="col-12">
         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
         {{ field|add_class:"form-control" }}
         {% if field.errors %}
-          <div class="text-danger small mt-1">
-            {{ field.errors|striptags }}
-          </div>
+          <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
         {% endif %}
       </div>
     {% endfor %}
@@ -87,24 +97,31 @@
         {{ form.thread_type.3|add_class:"form-control" }}
       </div>
       {% if form.thread_type.errors %}
-        <div class="text-danger small">
-          {{ form.thread_type.errors|striptags }}
-        </div>
+        <div class="text-danger small">{{ form.thread_type.errors|striptags }}</div>
       {% endif %}
     </div>
 
     <!-- Кнопки -->
     <div class="col-12 d-grid gap-2">
-      <button type="submit" class="btn btn-primary btn-lg btn-save">Сохранить</button>
+      <button type="submit"
+              class="btn btn-primary btn-lg btn-save btn-hover">
+        Сохранить
+      </button>
       {% if carpet %}
         <a href="{% url 'collection_detail' carpet.collection.id %}"
-           class="btn btn-outline-secondary btn-lg btn-cancel">Отмена</a>
+           class="btn btn-outline-secondary btn-lg btn-cancel btn-hover">
+          Отмена
+        </a>
       {% elif collection_id %}
         <a href="{% url 'collection_detail' collection_id %}"
-           class="btn btn-outline-secondary btn-lg btn-cancel">Отмена</a>
+           class="btn btn-outline-secondary btn-lg btn-cancel btn-hover">
+          Отмена
+        </a>
       {% else %}
         <a href="{% url 'collection_cards' %}"
-           class="btn btn-outline-secondary btn-lg btn-cancel">Отмена</a>
+           class="btn btn-outline-secondary btn-lg btn-cancel btn-hover">
+          Отмена
+        </a>
       {% endif %}
     </div>
   </form>

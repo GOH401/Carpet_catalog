@@ -2,6 +2,31 @@
 {% block title %}Удалить коллекцию{% endblock %}
 
 {% block content %}
+<style>
+  /* Hover и анимация для кнопок */
+  .btn-hover {
+    transition: transform .15s ease, background .2s ease;
+  }
+  .btn-hover:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  .btn-danger-hover {
+    background: linear-gradient(90deg, #e63946, #f47c7c);
+    transition: background .2s ease, transform .15s ease;
+  }
+  .btn-danger-hover:hover {
+    background: linear-gradient(90deg, #c5303e, #d6455d);
+    transform: translateY(-2px) scale(1.02);
+  }
+  .btn-outline-hover {
+    transition: background .2s ease, transform .15s ease;
+  }
+  .btn-outline-hover:hover {
+    background-color: rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+</style>
+
 <div class="container-fluid px-3 py-5 d-flex justify-content-center">
   <div class="w-100" style="max-width: 400px;">
     <div class="p-4 rounded-4 border shadow-sm text-center bg-danger bg-opacity-10">
@@ -14,12 +39,11 @@
       <form method="post" class="d-grid gap-3">
         {% csrf_token %}
         <button type="submit"
-                class="btn btn-lg text-white fw-bold"
-                style="background: linear-gradient(90deg, #e63946, #f47c7c); border-radius: .75rem;">
+                class="btn btn-danger btn-lg text-white fw-bold btn-danger-hover">
           Да, удалить
         </button>
         <a href="{% url 'collection_list' %}"
-           class="btn btn-outline-secondary btn-lg fw-bold">
+           class="btn btn-outline-secondary btn-lg fw-bold btn-outline-hover">
           Отмена
         </a>
       </form>

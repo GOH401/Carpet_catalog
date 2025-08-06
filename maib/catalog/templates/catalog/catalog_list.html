@@ -1,15 +1,31 @@
-{# templates/catalog_list.html #}
 {% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Каталог ковров{% endblock %}
 
 {% block content %}
+<style>
+  /* Плавные hover-эффекты для карточек и кнопок */
+  .card-hover {
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .btn-hover {
+    transition: transform .15s ease, background .2s ease;
+  }
+  .btn-hover:hover {
+    transform: translateY(-2px);
+  }
+</style>
+
 <div class="container-fluid px-3 py-3">
   <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
     <h1 class="fw-bold fs-1 mb-2">Каталог ковров</h1>
     {% if user.is_authenticated %}
-      <a href="{% url 'carpet_create' %}" class="btn btn-dark btn-lg">+ Добавить ковер</a>
+      <a href="{% url 'carpet_create' %}" class="btn btn-dark btn-lg btn-hover">+ Добавить ковер</a>
     {% endif %}
   </div>
 
@@ -46,7 +62,7 @@
       </select>
     </div>
     <div class="col-12 col-md-1">
-      <button type="submit" class="btn btn-primary btn-lg w-100">Найти</button>
+      <button type="submit" class="btn btn-primary btn-lg w-100 btn-hover">Найти</button>
     </div>
   </form>
 
@@ -54,7 +70,7 @@
     {% for carpet in page_obj %}
       <div class="col-12 col-sm-6 col-md-4 col-lg-3">
         <a href="{% url 'carpet_detail' carpet.pk %}" class="text-decoration-none text-dark">
-          <div class="card h-100 shadow-sm">
+          <div class="card card-hover h-100 shadow-sm">
             {% if carpet.image %}
               <img src="{{ carpet.image }}"
                    class="card-img-top"
@@ -92,24 +108,23 @@
       <ul class="pagination pagination-lg">
         {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+            <a class="page-link btn-hover" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
                aria-label="Назад">←</a>
           </li>
         {% endif %}
         {% for i in page_obj.paginator.page_range %}
           <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-            <a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a>
+            <a class="page-link btn-hover" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a>
           </li>
         {% endfor %}
         {% if page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+            <a class="page-link btn-hover" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
                aria-label="Вперёд">→</a>
           </li>
         {% endif %}
       </ul>
     </nav>
   {% endif %}
-
 </div>
 {% endblock %}

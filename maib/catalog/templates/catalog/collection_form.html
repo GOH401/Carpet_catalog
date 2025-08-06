@@ -2,6 +2,27 @@
 {% block title %}{% if collection %}Изменить коллекцию{% else %}Добавить коллекцию{% endif %}{% endblock %}
 
 {% block content %}
+<style>
+  /* Hover & transition for buttons */
+  .btn-hover {
+    transition: transform .15s ease, background .2s ease;
+  }
+  .btn-hover:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  .btn-outline-hover:hover {
+    background-color: rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+  .btn-primary-hover {
+    transition: background .2s ease, transform .15s ease;
+  }
+  .btn-primary-hover:hover {
+    background-color: #1a73e8;
+    transform: translateY(-2px) scale(1.02);
+  }
+</style>
+
 <div class="container-fluid px-3 py-4 d-flex justify-content-center">
   <div class="w-100" style="max-width: 400px;">
     <div class="p-4 rounded-3 shadow-sm bg-white">
@@ -26,15 +47,18 @@
         <div class="col-12">
           <label class="form-label fs-5 fw-semibold">Основные цвета</label>
           <div id="color-pickers" class="d-flex flex-column gap-2 mb-2"></div>
-          <button type="button" class="btn btn-outline-secondary btn-sm w-100"
-                  id="addColorBtn">+ Добавить цвет</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm w-100 btn-outline-hover" id="addColorBtn">
+            + Добавить цвет
+          </button>
           <input type="hidden" name="main_colors" id="mainColorsInput">
           <div class="form-text small text-muted">Максимум 8. Формат: <code>#ffffff</code></div>
         </div>
 
         <div class="col-12 d-grid gap-2">
-          <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
-          <a href="{% url 'collection_list' %}" class="btn btn-outline-secondary btn-lg">
+          <button type="submit" class="btn btn-primary btn-lg btn-primary-hover btn-hover">
+            Сохранить
+          </button>
+          <a href="{% url 'collection_list' %}" class="btn btn-outline-secondary btn-lg btn-outline-hover btn-hover">
             Отмена
           </a>
         </div>
@@ -44,44 +68,46 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('color-pickers');
-  const hiddenInput = document.getElementById('mainColorsInput');
-  const max = 8;
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('color-pickers');
+    const hiddenInput = document.getElementById('mainColorsInput');
+    const max = 8;
 
-  function updateHidden() {
-    const vals = [...container.querySelectorAll('input[type=text]')]
-      .map(i=>i.value).filter(v=>v);
-    hiddenInput.value = vals.join(', ');
-  }
+    function updateHidden() {
+      const vals = [...container.querySelectorAll('input[type=text]')]
+        .map(i=>i.value).filter(v=>v);
+      hiddenInput.value = vals.join(', ');
+    }
 
-  function addPicker(color='#cccccc') {
-    if (container.children.length>=max) return;
-    const row = document.createElement('div');
-    row.className='d-flex gap-2';
+    function addPicker(color='#cccccc') {
+      if (container.children.length >= max) return;
+      const row = document.createElement('div');
+      row.className = 'd-flex gap-2';
 
-    const c = document.createElement('input');
-    c.type='color'; c.value=color;
-    c.className='form-control form-control-color';
-    c.style.width='48px'; c.style.padding=0;
+      const c = document.createElement('input');
+      c.type = 'color'; c.value = color;
+      c.className = 'form-control form-control-color';
+      c.style.width = '48px'; c.style.padding = 0;
 
-    const t = document.createElement('input');
-    t.type='text'; t.value=color;
-    t.placeholder='#ffffff'; t.maxLength=7;
-    t.className='form-control';
+      const t = document.createElement('input');
+      t.type = 'text'; t.value = color;
+      t.placeholder = '#ffffff'; t.maxLength = 7;
+      t.className = 'form-control';
 
-    c.oninput = ()=>{ t.value=c.value; updateHidden(); };
-    t.oninput = ()=>{ if(/^#([0-9A-Fa-f]{6})$/.test(t.value)){ c.value=t.value; updateHidden(); } };
+      c.oninput = () => { t.value = c.value; updateHidden(); };
+      t.oninput = () => {
+        if (/^#([0-9A-Fa-f]{6})$/.test(t.value)) { c.value = t.value; updateHidden(); }
+      };
 
-    row.append(c,t);
-    container.append(row);
-    updateHidden();
-  }
+      row.append(c, t);
+      container.append(row);
+      updateHidden();
+    }
 
-  document.getElementById('addColorBtn').addEventListener('click', ()=>addPicker());
-  const initial = "{{ form.initial.main_colors|default:'' }}";
-  if(initial) initial.split(',').forEach(c=>addPicker(c.trim()));
-  else addPicker();
-});
+    document.getElementById('addColorBtn').addEventListener('click', () => addPicker());
+    const initial = "{{ form.initial.main_colors|default:'' }}";
+    if (initial) initial.split(',').forEach(c => addPicker(c.trim()));
+    else addPicker();
+  });
 </script>
 {% endblock %}
