@@ -145,7 +145,8 @@
             <a href="{% url 'carpet_detail' carpet.pk %}" class="text-decoration-none text-dark">
                 <div class="carpet-card">
                     {% if carpet.image %}
-                    <img src="{{ carpet.image.url }}" alt="{{ carpet.name }}" class="carpet-img">
+                    <!-- Заменили .image.url на .image -->
+                    <img src="{{ carpet.image }}" alt="{{ carpet.name }}" class="carpet-img">
                     {% else %}
                     <div class="no-photo">Нет фото</div>
                     {% endif %}
