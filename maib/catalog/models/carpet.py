@@ -3,6 +3,7 @@ from colorthief import ColorThief
 from io import BytesIO
 from PIL import Image
 from .collection import Collection
+import requests
 
 class Carpet(models.Model):
     STYLE_CHOICES = [
@@ -33,7 +34,7 @@ class Carpet(models.Model):
     name = models.CharField("Название ковра", max_length=100)
     code = models.CharField("Код названия", max_length=100, blank=True, default='')
     color = models.CharField("Цвет", max_length=50)
-    image = models.ImageField("Изображение", upload_to='carpets/', blank=True, null=True)
+    image = models.CharField("Изображение (URL)", max_length=500, blank=True, null=True)
     main_colors = models.JSONField(null=True, blank=True)
     style = models.CharField("Стиль", max_length=20, choices=STYLE_CHOICES, default='modern')
 
@@ -57,13 +58,13 @@ class Carpet(models.Model):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
-def get_main_colors(image_field, num_colors=3):
-    if not image_field:
+def get_main_colors(image_url, num_colors=3):
+    try:
+        resp = requests.get(image_url)
+        resp.raise_for_status()
+        with BytesIO(resp.content) as buf:
+            ct = ColorThief(buf)
+            palette = ct.get_palette(color_count=num_colors)
+            return [f'#{r:02x}{g:02x}{b:02x}' for r,g,b in palette]
+    except:
         return []
-    img = Image.open(image_field)
-    with BytesIO() as buffer:
-        img.save(buffer, format='PNG')
-        buffer.seek(0)
-        ct = ColorThief(buffer)
-        palette = ct.get_palette(color_count=num_colors)
-        return [f'#{r:02x}{g:02x}{b:02x}' for r, g, b in palette]

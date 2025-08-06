@@ -11,3 +11,17 @@ __pycache__/
 
 # Django media
 media/
+
+
+
+
+# .env-файл с ключами
+.env
+
+
+*.pyc
+
+# IDE
+.vscode/
+*.suo
+*.user
