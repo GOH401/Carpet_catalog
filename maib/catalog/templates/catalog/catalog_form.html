@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
+
 {% block title %}{% if carpet %}Редактировать ковер{% else %}Добавить ковер{% endif %}{% endblock %}
 
 {% block content %}
 <style>
-  /* Общие стили формы */
   .form-card {
     max-width: 100%;
     width: 100%;
@@ -30,8 +30,6 @@
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
   }
-
-  /* Grid для нитей */
   .thread-header, .thread-row {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr 2fr;
@@ -47,8 +45,6 @@
       grid-template-columns: 1fr;
     }
   }
-
-  /* Hover-эффекты на кнопках */
   .btn-hover {
     transition: transform .15s ease, background .2s ease;
   }
@@ -76,13 +72,15 @@
     {% csrf_token %}
 
     {% for field in form.visible_fields %}
-      <div class="col-12">
-        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-        {{ field|add_class:"form-control" }}
-        {% if field.errors %}
-          <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
-        {% endif %}
-      </div>
+      {% if field.name not in 'thread_percent_left thread_material_left thread_percent_right thread_note'.split %}
+        <div class="col-12">
+          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+          {{ field|add_class:"form-control" }}
+          {% if field.errors %}
+            <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
     {% endfor %}
 
     <!-- Вид нитей -->
@@ -92,13 +90,18 @@
         <div>%</div><div>Нить 1</div><div>%</div><div>Примечание</div>
       </div>
       <div class="thread-row mb-1">
-        {{ form.thread_type.0|add_class:"form-select" }}
-        {{ form.thread_type.1|add_class:"form-select" }}
-        {{ form.thread_type.2|add_class:"form-select" }}
-        {{ form.thread_type.3|add_class:"form-control" }}
+        {{ form.thread_percent_left|add_class:"form-control" }}
+        {{ form.thread_material_left|add_class:"form-select" }}
+        {{ form.thread_percent_right|add_class:"form-control" }}
+        {{ form.thread_note|add_class:"form-control" }}
       </div>
-      {% if form.thread_type.errors %}
-        <div class="text-danger small">{{ form.thread_type.errors|striptags }}</div>
+      {% if form.thread_percent_left.errors or form.thread_material_left.errors or form.thread_percent_right.errors or form.thread_note.errors %}
+        <div class="text-danger small mt-1">
+          {{ form.thread_percent_left.errors|striptags }}
+          {{ form.thread_material_left.errors|striptags }}
+          {{ form.thread_percent_right.errors|striptags }}
+          {{ form.thread_note.errors|striptags }}
+        </div>
       {% endif %}
     </div>
 
