@@ -72,16 +72,16 @@
     {% csrf_token %}
 
     {% for field in form.visible_fields %}
-      {% if field.name not in 'thread_percent_left thread_material_left thread_percent_right thread_note'.split %}
-        <div class="col-12">
-          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-          {{ field|add_class:"form-control" }}
-          {% if field.errors %}
-            <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
-          {% endif %}
-        </div>
+  {% if field.name != 'thread_percent_left' and field.name != 'thread_material_left' and field.name != 'thread_percent_right' and field.name != 'thread_note' %}
+    <div class="col-12">
+      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+      {{ field|add_class:"form-control" }}
+      {% if field.errors %}
+        <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
       {% endif %}
-    {% endfor %}
+    </div>
+  {% endif %}
+{% endfor %}
 
     <!-- Вид нитей -->
     <div class="col-12">
