@@ -3,28 +3,16 @@
 
 {% block content %}
 <style>
-  /* Hover & transition for buttons */
-  .btn-hover {
-    transition: transform .15s ease, background .2s ease;
-  }
-  .btn-hover:hover {
-    transform: translateY(-2px) scale(1.02);
-  }
-  .btn-outline-hover:hover {
-    background-color: rgba(0,0,0,0.05);
-    transform: translateY(-2px);
-  }
-  .btn-primary-hover {
-    transition: background .2s ease, transform .15s ease;
-  }
-  .btn-primary-hover:hover {
-    background-color: #1a73e8;
-    transform: translateY(-2px) scale(1.02);
-  }
+  .btn-hover{transition:transform .15s ease, background .2s ease}
+  .btn-hover:hover{transform:translateY(-2px) scale(1.02)}
+  .btn-outline-hover:hover{background-color:rgba(0,0,0,0.05);transform:translateY(-2px)}
+  .btn-primary-hover{transition:background .2s ease, transform .15s ease}
+  .btn-primary-hover:hover{background-color:#1a73e8;transform:translateY(-2px) scale(1.02)}
+  .img-preview{width:100%;height:200px;object-fit:cover;border-radius:12px;border:1px solid #e9ecef}
 </style>
 
 <div class="container-fluid px-3 py-4 d-flex justify-content-center">
-  <div class="w-100" style="max-width: 400px;">
+  <div class="w-100" style="max-width: 480px;">
     <div class="p-4 rounded-3 shadow-sm bg-white">
 
       <h2 class="text-center mb-4 fw-bold fs-4">
@@ -34,33 +22,43 @@
       <form method="post" class="row g-3">
         {% csrf_token %}
 
+        <!-- Название -->
         <div class="col-12">
-          <label for="{{ form.name.id_for_label }}" class="form-label fs-5 fw-semibold">
-            Название коллекции
-          </label>
-          {{ form.name|add_class:"form-control form-control-lg" }}
-          {% if form.name.errors %}
-            <div class="text-danger small mt-1">{{ form.name.errors|striptags }}</div>
-          {% endif %}
+          <label for="{{ form.name.id_for_label }}" class="form-label fs-5 fw-semibold">Название коллекции</label>
+          {{ form.name }}
+          {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors|striptags }}</div>{% endif %}
         </div>
 
+        <!-- Изображение превью (URL) -->
+        <div class="col-12">
+          <label for="{{ form.image_url.id_for_label }}" class="form-label fs-5 fw-semibold">Изображение превью (URL)</label>
+          {{ form.image_url }}
+          <div class="form-text small text-muted">
+            Вставьте публичный URL (например, Supabase Storage).
+          </div>
+
+          <div class="mt-2">
+            <img id="preview" class="img-preview"
+                 src="{% if collection %}{{ collection.get_image_url }}{% elif form.image_url.value %}{{ form.image_url.value }}{% endif %}"
+                 alt="Превью" {% if not collection and not form.image_url.value %}style="display:none"{% endif %}>
+          </div>
+
+          {% if form.image_url.errors %}<div class="text-danger small mt-1">{{ form.image_url.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <!-- Основные цвета (до 8): управляем скрытым полем form.main_colors -->
+        {{ form.main_colors }} {# HiddenInput отрисуется здесь #}
         <div class="col-12">
           <label class="form-label fs-5 fw-semibold">Основные цвета</label>
           <div id="color-pickers" class="d-flex flex-column gap-2 mb-2"></div>
-          <button type="button" class="btn btn-outline-secondary btn-sm w-100 btn-outline-hover" id="addColorBtn">
-            + Добавить цвет
-          </button>
-          <input type="hidden" name="main_colors" id="mainColorsInput">
-          <div class="form-text small text-muted">Максимум 8. Формат: <code>#ffffff</code></div>
+          <button type="button" class="btn btn-outline-secondary btn-sm w-100 btn-outline-hover" id="addColorBtn">+ Добавить цвет</button>
+          <div class="form-text small text-muted">Максимум 8. Формат: <code>#fff</code> или <code>#ffffff</code></div>
+          {% if form.main_colors.errors %}<div class="text-danger small mt-1">{{ form.main_colors.errors|striptags }}</div>{% endif %}
         </div>
 
         <div class="col-12 d-grid gap-2">
-          <button type="submit" class="btn btn-primary btn-lg btn-primary-hover btn-hover">
-            Сохранить
-          </button>
-          <a href="{% url 'collection_list' %}" class="btn btn-outline-secondary btn-lg btn-outline-hover btn-hover">
-            Отмена
-          </a>
+          <button type="submit" class="btn btn-primary btn-lg btn-primary-hover btn-hover">Сохранить</button>
+          <a href="{% url 'collection_list' %}" class="btn btn-outline-secondary btn-lg btn-outline-hover btn-hover">Отмена</a>
         </div>
       </form>
     </div>
@@ -69,44 +67,58 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Live-превью для image_url
+    const urlInput = document.getElementById('{{ form.image_url.id_for_label }}');
+    const preview  = document.getElementById('preview');
+    if (urlInput) {
+      urlInput.addEventListener('input', () => {
+        const v = urlInput.value.trim();
+        if (v && /^https?:\/\//i.test(v)) { preview.src = v; preview.style.display = ''; }
+        else { preview.style.display = 'none'; }
+      });
+    }
+
+    // Работа с цветами
+    const hiddenInput = document.getElementById('{{ form.main_colors.id_for_label }}');
     const container = document.getElementById('color-pickers');
-    const hiddenInput = document.getElementById('mainColorsInput');
     const max = 8;
 
     function updateHidden() {
-      const vals = [...container.querySelectorAll('input[type=text]')]
-        .map(i=>i.value).filter(v=>v);
+      const vals = Array.from(container.querySelectorAll('input[type=text]'))
+        .map(i => i.value.trim()).filter(Boolean);
       hiddenInput.value = vals.join(', ');
     }
-
     function addPicker(color='#cccccc') {
       if (container.children.length >= max) return;
       const row = document.createElement('div');
-      row.className = 'd-flex gap-2';
+      row.className = 'd-flex gap-2 align-items-center';
 
       const c = document.createElement('input');
       c.type = 'color'; c.value = color;
-      c.className = 'form-control form-control-color';
-      c.style.width = '48px'; c.style.padding = 0;
+      c.className = 'form-control form-control-color'; c.style.width = '48px'; c.style.padding = 0;
 
       const t = document.createElement('input');
-      t.type = 'text'; t.value = color;
-      t.placeholder = '#ffffff'; t.maxLength = 7;
+      t.type = 'text'; t.value = color; t.placeholder = '#ffffff'; t.maxLength = 7;
       t.className = 'form-control';
+
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'btn btn-outline-danger btn-sm'; del.textContent = '×';
+      del.onclick = () => { row.remove(); updateHidden(); };
 
       c.oninput = () => { t.value = c.value; updateHidden(); };
       t.oninput = () => {
-        if (/^#([0-9A-Fa-f]{6})$/.test(t.value)) { c.value = t.value; updateHidden(); }
+        const ok = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(t.value);
+        if (ok) { c.value = t.value; updateHidden(); }
       };
 
-      row.append(c, t);
+      row.append(c, t, del);
       container.append(row);
       updateHidden();
     }
 
-    document.getElementById('addColorBtn').addEventListener('click', () => addPicker());
-    const initial = "{{ form.initial.main_colors|default:'' }}";
-    if (initial) initial.split(',').forEach(c => addPicker(c.trim()));
+    // Инициализация: берем значение hidden-поля формы
+    const initial = (hiddenInput.value || "").split(',').map(s => s.trim()).filter(Boolean);
+    if (initial.length) initial.forEach(addPicker);
     else addPicker();
   });
 </script>

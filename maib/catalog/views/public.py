@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from maib.catalog.models import Carpet, Collection
 from django.core.paginator import Paginator
+from django.db.models import Count, Min, Max
 
 def carpet_list(request, pk = None):
     """Отображение колекции"""
@@ -78,8 +79,43 @@ def carpet_detail(request, pk):
     return render(request, 'catalog/catalog_detail.html', context)
 
 def collection_cards(request):
-    collections = Collection.objects.all()
-    return render(request, 'catalog/collection_cards.html', {'collection_cards': collections})
+    fields = {f.name for f in Collection._meta.get_fields()}
+    age_field = 'created_at' if 'created_at' in fields else 'id'
+
+    qs = (Collection.objects
+          .only('id', 'name', 'image_url')
+          .annotate(carpets_count=Count('carpets', distinct=True))
+          .prefetch_related('carpets'))
+
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        qs = qs.filter(name__icontains=q)
+
+    min_count = request.GET.get('min_count')
+    max_count = request.GET.get('max_count')
+    if min_count:
+        qs = qs.filter(carpets_count__gte=min_count)
+    if max_count:
+        qs = qs.filter(carpets_count__lte=max_count)
+
+    sort = request.GET.get('sort', 'name_asc')
+    order_map = {
+        'name_asc': 'name', 'name_desc': '-name',
+        'count_desc': '-carpets_count', 'count_asc': 'carpets_count',
+        'age_new': f'-{age_field}', 'age_old': f'{age_field}',
+    }
+    qs = qs.order_by(order_map.get(sort, 'name'))
+
+    stats = (Collection.objects
+             .annotate(carpets_count=Count('carpets', distinct=True))
+             .aggregate(min_count=Min('carpets_count'), max_count=Max('carpets_count')))
+
+    ctx = {
+        'collection_cards': qs,
+        'stats': stats,
+        'current': {'q': q, 'min_count': min_count or '', 'max_count': max_count or '', 'sort': sort}
+    }
+    return render(request, 'catalog/collection_cards.html', ctx)
 
 
 def collection_detail(request, pk):
