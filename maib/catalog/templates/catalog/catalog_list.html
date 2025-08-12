@@ -5,20 +5,18 @@
 
 {% block content %}
 <style>
-  /* Плавные hover-эффекты для карточек и кнопок */
-  .card-hover {
-    transition: transform .2s ease, box-shadow .2s ease;
+  .card-hover{transition:transform .2s ease, box-shadow .2s ease}
+  .card-hover:hover{transform:translateY(-6px) scale(1.02); box-shadow:0 8px 24px rgba(0,0,0,.15)}
+  .btn-hover{transition:transform .15s ease, background .2s ease}
+  .btn-hover:hover{transform:translateY(-2px)}
+  .card-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* Свотч цвета рядом с селектом */
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid #ced4da; display:inline-block;
   }
-  .card-hover:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-  }
-  .btn-hover {
-    transition: transform .15s ease, background .2s ease;
-  }
-  .btn-hover:hover {
-    transform: translateY(-2px);
-  }
+  .input-group .input-group-text { background:#fff; }
 </style>
 
 <div class="container-fluid px-3 py-3">
@@ -29,21 +27,33 @@
     {% endif %}
   </div>
 
+  <!-- Фильтры -->
   <form method="get" class="row gx-2 gy-2 align-items-end mb-4">
     <div class="col-12 col-sm-6 col-md-4">
       <input type="text" name="q" value="{{ query }}"
              class="form-control form-control-lg"
-             placeholder="Название или коллекция">
+             placeholder="Код">
     </div>
-    <div class="col-12 col-sm-6 col-md-2">
-      <select name="color" class="form-select form-select-lg">
-        <option value="">Все цвета</option>
-        {% for c in all_colors %}
-          <option value="{{ c }}" {% if color == c %}selected{% endif %}>{{ c }}</option>
-        {% endfor %}
-      </select>
+
+    <!-- Цвет + свотч -->
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="input-group input-group-lg">
+        <span class="input-group-text">
+          <span id="colorSwatch" class="swatch" title="Пример цвета"></span>
+        </span>
+        <select name="color" id="colorSelect" class="form-select">
+          <option value="" data-hex="">Все цвета</option>
+          {% for f in all_colors %}
+            <option value="{{ f.key }}" data-hex="{{ f.hex }}"
+                    {% if color == f.key %}selected{% endif %}>
+              {{ f.label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
-    <div class="col-12 col-sm-6 col-md-2">
+
+    <div class="col-12 col-sm-6 col-md-3">
       <select name="style" class="form-select form-select-lg">
         <option value="">Все стили</option>
         {% for s in all_styles %}
@@ -51,18 +61,11 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col-12 col-sm-6 col-md-3">
-      <select name="collection" class="form-select form-select-lg">
-        <option value="">Все коллекции</option>
-        {% for col in all_collections %}
-          <option value="{{ col.id }}" {% if col.id|stringformat:"s" == collection %}selected{% endif %}>
-            {{ col.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-12 col-md-1">
+
+    <!-- Найти + Сбросить -->
+    <div class="col-12 col-sm-6 col-md-2 d-flex gap-2">
       <button type="submit" class="btn btn-primary btn-lg w-100 btn-hover">Найти</button>
+      <a class="btn btn-outline-secondary btn-lg w-100 btn-hover" href="{{ request.path }}">Сбросить</a>
     </div>
   </form>
 
@@ -71,25 +74,30 @@
       <div class="col-12 col-sm-6 col-md-4 col-lg-3">
         <a href="{% url 'carpet_detail' carpet.pk %}" class="text-decoration-none text-dark">
           <div class="card card-hover h-100 shadow-sm">
-            {% if carpet.image %}
-              <img src="{{ carpet.image }}"
-                   class="card-img-top"
-                   style="width:100%; object-fit: cover;"
-                   alt="{{ carpet.name }}">
-            {% else %}
-              <div class="bg-light d-flex align-items-center justify-content-center"
-                   style="aspect-ratio:4/5;">
-                <span class="text-muted fs-5">Нет фото</span>
-              </div>
-            {% endif %}
+            <div class="ratio ratio-4x3">
+              {% with img_src=carpet.get_image_url|default:carpet.image %}
+                {% if img_src %}
+                  <img src="{{ img_src }}" class="w-100 h-100" style="object-fit:cover"
+                       alt="{{ carpet.collection.name }} {{ carpet.code }} {{ carpet.color }}"
+                       loading="lazy"
+                       onerror="this.onerror=null;this.src='{% static 'img/carpet_placeholder.jpg' %}'">
+                {% else %}
+                  <img src="{% static 'img/carpet_placeholder.jpg' %}" class="w-100 h-100"
+                       style="object-fit:cover" alt="Нет фото" loading="lazy">
+                {% endif %}
+              {% endwith %}
+            </div>
+
             <div class="card-body d-flex flex-column p-3">
-              <h2 class="card-title fs-4 mb-2 text-center">{{ carpet.name }}</h2>
-              <p class="card-text mb-2">
-                <small><b>Код:</b> {{ carpet.code }}</small><br>
-                <small><b>Цвет:</b> {{ carpet.color }}</small>
+              <h2 class="card-title fs-5 mb-2 text-center">
+                {{ carpet.collection.name }} {{ carpet.code }} {{ carpet.color }}
+              </h2>
+              <p class="card-text mb-2 text-center">
+                <small><b>Код:</b> {{ carpet.code }}</small>
+                {% if carpet.color %}<br><small><b>Цвет:</b> {{ carpet.color }}</small>{% endif %}
               </p>
               <div class="mt-auto d-flex justify-content-center gap-1">
-                <span class="badge bg-secondary fs-6">{{ carpet.style }}</span>
+                {% if carpet.style %}<span class="badge bg-secondary fs-6">{{ carpet.style }}</span>{% endif %}
                 <span class="badge bg-info text-dark fs-6">{{ carpet.collection.name }}</span>
               </div>
             </div>
@@ -104,27 +112,50 @@
   </div>
 
   {% if page_obj.has_other_pages %}
+    {% with query_string=request.GET.urlencode %}
     <nav class="mt-4 d-flex justify-content-center">
       <ul class="pagination pagination-lg">
         {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link btn-hover" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
-               aria-label="Назад">←</a>
+            <a class="page-link btn-hover" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">←</a>
           </li>
-        {% endif %}
+        {% else %}<li class="page-item disabled"><span class="page-link">←</span></li>{% endif %}
+
         {% for i in page_obj.paginator.page_range %}
           <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-            <a class="page-link btn-hover" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a>
+            <a class="page-link btn-hover" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ i }}">{{ i }}</a>
           </li>
         {% endfor %}
+
         {% if page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link btn-hover" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
-               aria-label="Вперёд">→</a>
+            <a class="page-link btn-hover" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">→</a>
           </li>
-        {% endif %}
+        {% else %}<li class="page-item disabled"><span class="page-link">→</span></li>{% endif %}
       </ul>
     </nav>
+    {% endwith %}
   {% endif %}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('colorSelect');
+    const swatch = document.getElementById('colorSwatch');
+
+    function updateSwatch() {
+      const hex = select.selectedOptions[0]?.dataset.hex || '';
+      if (hex) {
+        swatch.style.background = hex;
+        swatch.style.borderColor = hex + '80';
+      } else {
+        swatch.style.background = 'linear-gradient(45deg,#e9ecef,#fff)';
+        swatch.style.borderColor = '#ced4da';
+      }
+    }
+
+    updateSwatch();
+    select.addEventListener('change', updateSwatch);
+  });
+</script>
 {% endblock %}

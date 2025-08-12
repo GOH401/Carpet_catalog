@@ -1,56 +1,88 @@
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, CharField, Count
 from maib.catalog.models import Carpet, Collection
 from django.core.paginator import Paginator
 from django.db.models import Count, Min, Max
 
-def carpet_list(request, pk = None):
-    """Отображение колекции"""
-    query = request.GET.get('q', '')
-    color = request.GET.get('color', '')
-    collection_id = request.GET.get('collection', '')
-    style = request.GET.get('style', '')  # Новый фильтр
+COLOR_FAMILIES = [
+    {"key": "beige","label":"Бежевый / крем","hex":"#D8C9B2",
+     "q": Q(color__icontains="BEIGE")|Q(color__icontains="BEJ")|Q(color__icontains="CREAM")|Q(color__icontains="IVORY")},
+    {"key": "taupe","label":"Визон / тауп","hex":"#B7A9A1",
+     "q": Q(color__icontains="VIZON")|Q(color__icontains="VİZON")|Q(color__icontains="TAUPE")|Q(color__icontains="GREIGE")},
+    {"key": "grey","label":"Серый","hex":"#9AA0A6",
+     "q": Q(color__icontains="GRAY")|Q(color__icontains="GREY")|Q(color__icontains="LGRAY")|Q(color__icontains="DGRAY")|Q(color__icontains="SMOKE")|Q(color__icontains="ASH")},
+    {"key": "blue","label":"Синий / голубой","hex":"#3C79B5",
+     "q": Q(color__icontains="BLUE")|Q(color__icontains="NAVY")|Q(color__icontains="SAXON")|Q(color__icontains="TURKUAZ")|Q(color__icontains="AQUA")|Q(color__icontains="MAVI")},
+    {"key": "green","label":"Зелёный","hex":"#3F8F4E", "q": Q(color__icontains="GREEN")|Q(color__icontains="MINT")},
+    {"key": "red","label":"Красный / бордо","hex":"#B23A48", "q": Q(color__icontains="RED")|Q(color__icontains="BORDO")|Q(color__icontains="MAROON")},
+    {"key": "brown","label":"Коричневый","hex":"#8B5E3C", "q": Q(color__icontains="BROWN")|Q(color__icontains="COFFEE")|Q(color__icontains="CHOC")},
+    {"key": "yellow","label":"Жёлтый / золото","hex":"#D6A20A", "q": Q(color__icontains="YELLOW")|Q(color__icontains="GOLD")},
+    {"key": "orange","label":"Оранжевый / лосось","hex":"#F29B64", "q": Q(color__icontains="ORANGE")|Q(color__icontains="SOMON")},
+    {"key": "purple","label":"Фиолетовый","hex":"#7D5BA6", "q": Q(color__icontains="PURPLE")|Q(color__icontains="VIOLET")},
+    {"key": "pink","label":"Розовый","hex":"#E08EB4", "q": Q(color__icontains="PINK")},
+    {"key": "bw","label":"Чёрный / белый","hex":"#333333", "q": Q(color__icontains="BLACK")|Q(color__icontains="WHITE")},
+]
 
-    collection_id = pk or request.GET.get('collection', '')
-    carpets = Carpet.objects.all()
+def carpet_list(request, pk=None):
+    # базовая выборка
+    qs_base = Carpet.objects.select_related('collection').all()
 
-    if query:
-        carpets = carpets.filter(
-            Q(name__icontains=query) |
-            Q(collection__name__icontains=query)
-        )
+    # параметры
+    q      = (request.GET.get('q') or '').strip()       # код
+    color  = (request.GET.get('color') or '').strip()   # ключ семьи
+    style  = (request.GET.get('style') or '').strip()
 
-    if color:
-        carpets = carpets.filter(color__iexact=color)
+    # фильтр коллекции из URL
+    if pk:
+        qs_base = qs_base.filter(collection_id=pk)
 
-    if collection_id:
-        carpets = carpets.filter(collection_id=collection_id)
+    # поиск только по коду
+    if q:
+        qs_base = qs_base.filter(code__iexact=q)
 
+    # аннотация цветовой семьи
+    whens = [When(f["q"], then=Value(f["key"])) for f in COLOR_FAMILIES]
+    qs_base = qs_base.annotate(
+        color_family=Case(*whens, default=Value("other"), output_field=CharField())
+    )
+
+    # итоговая выборка с учётом выбранных фильтров
+    qs = qs_base
     if style:
-        carpets = carpets.filter(style__iexact=style)
+        qs = qs.filter(style__iexact=style)
+    if color:
+        qs = qs.filter(color_family=color)
 
-    # Уникальные значения для фильтров
-    all_colors = Carpet.objects.order_by('color').values_list('color', flat=True).distinct()
-    all_collections = Collection.objects.all()
-    all_styles = Carpet.objects.order_by('style').values_list('style', flat=True).distinct()
+    # стили — считаем БЕЗ учёта выбранного стиля (чтобы можно было переключиться)
+    all_styles = list(
+        qs_base.order_by('style').values_list('style', flat=True).distinct()
+    )
 
-    # Пагинация
-    paginator = Paginator(carpets, 12)  # 12 ковров на страницу
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # цвета — можно учитывать выбранный стиль, чтобы список был релевантным
+    fam_source = qs_base.filter(style__iexact=style) if style else qs_base
+    fam_counts = dict(
+        fam_source.values('color_family').annotate(cnt=Count('id')).values_list('color_family','cnt')
+    )
+    all_colors = [{**f, "count": fam_counts.get(f["key"], 0)}
+                  for f in COLOR_FAMILIES if fam_counts.get(f["key"], 0)]
 
-    context = {
+    # сортировка: новые сверху (created_at/id)
+    fields = {f.name for f in Carpet._meta.get_fields()}
+    age_field = 'created_at' if 'created_at' in fields else 'id'
+    qs = qs.order_by(f'-{age_field}', 'id')
+
+    # пагинация
+    paginator = Paginator(qs, 12)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'catalog/catalog_list.html', {
         'page_obj': page_obj,
-        'query': query,
+        'query': q,
         'color': color,
-        'collection': collection_id,
         'style': style,
-        'all_colors': all_colors,
-        'all_collections': all_collections,
+        'all_colors': all_colors,   # [{key,label,hex,count}, …]
         'all_styles': all_styles,
-    }
-
-    return render(request, 'catalog/catalog_list.html', context)
+    })
 
 def carpet_detail(request, pk):
     carpet = get_object_or_404(Carpet, pk=pk)
