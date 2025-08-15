@@ -1,133 +1,122 @@
 {% extends 'base.html' %}
-{% load widget_tweaks %}
+{% load static %}
 
 {% block title %}{% if carpet %}Редактировать ковер{% else %}Добавить ковер{% endif %}{% endblock %}
 
 {% block content %}
 <style>
-  .form-card {
-    max-width: 100%;
-    width: 100%;
-    margin: 1rem auto;
-    background: #fff;
-    border-radius: 1rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    padding: 1.5rem;
-    border: 1px solid #e5e5e5;
-  }
-  .form-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    text-align: center;
-  }
-  .form-label {
-    font-size: 1.1rem;
-    font-weight: 500;
-  }
-  .form-control, .form-select {
-    font-size: 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-  }
-  .thread-header, .thread-row {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr 2fr;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .thread-header div {
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  @media (max-width: 768px) {
-    .thread-header, .thread-row {
-      grid-template-columns: 1fr;
-    }
-  }
-  .btn-hover {
-    transition: transform .15s ease, background .2s ease;
-  }
-  .btn-hover:hover {
-    transform: translateY(-2px);
-  }
-  .btn-save {
-    font-size: 1.15rem;
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-  }
-  .btn-cancel {
-    font-size: 1.05rem;
-    padding: 0.75rem;
-    text-decoration: none;
-  }
+  .form-card{max-width:1100px;margin:16px auto;background:#fff;border:1px solid #e5e5e5;border-radius:16px;box-shadow:0 8px 24px #0001;padding:20px}
+  .form-title{font-size:1.6rem;font-weight:700;margin-bottom:10px;text-align:center}
+  .preview-card{border:1px solid #eee;border-radius:12px;padding:10px;background:#fafafa}
+  .preview-card img{width:100%;height:auto;border-radius:8px}
 </style>
 
 <div class="form-card">
-  <div class="form-title">
-    {% if carpet %}Редактировать ковер{% else %}Добавить ковер{% endif %}
-  </div>
+  <div class="form-title">{% if carpet %}Редактировать ковер{% else %}Добавить ковер{% endif %}</div>
 
-  <form method="post" enctype="multipart/form-data" autocomplete="off" class="row g-3">
+  <!-- enctype обязательно для загрузки файла -->
+  <form method="post" enctype="multipart/form-data" class="row g-3" autocomplete="off">
     {% csrf_token %}
 
-    {% for field in form.visible_fields %}
-  {% if field.name != 'thread_percent_left' and field.name != 'thread_material_left' and field.name != 'thread_percent_right' and field.name != 'thread_note' %}
-    <div class="col-12">
-      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-      {{ field|add_class:"form-control" }}
-      {% if field.errors %}
-        <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
-      {% endif %}
-    </div>
-  {% endif %}
-{% endfor %}
-
-    <!-- Вид нитей -->
-    <div class="col-12">
-      <label class="form-label">Вид нитей:</label>
-      <div class="thread-header mb-2">
-        <div>%</div><div>Нить 1</div><div>%</div><div>Примечание</div>
-      </div>
-      <div class="thread-row mb-1">
-        {{ form.thread_percent_left|add_class:"form-control" }}
-        {{ form.thread_material_left|add_class:"form-select" }}
-        {{ form.thread_percent_right|add_class:"form-control" }}
-        {{ form.thread_note|add_class:"form-control" }}
-      </div>
-      {% if form.thread_percent_left.errors or form.thread_material_left.errors or form.thread_percent_right.errors or form.thread_note.errors %}
-        <div class="text-danger small mt-1">
-          {{ form.thread_percent_left.errors|striptags }}
-          {{ form.thread_material_left.errors|striptags }}
-          {{ form.thread_percent_right.errors|striptags }}
-          {{ form.thread_note.errors|striptags }}
+    <!-- Левая колонка -->
+    <div class="col-12 col-md-7">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.collection.id_for_label }}">Коллекция</label>{{ form.collection }}
         </div>
-      {% endif %}
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.style.id_for_label }}">Стиль</label>{{ form.style }}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.code.id_for_label }}">Код модели</label>{{ form.code }}
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.color.id_for_label }}">Цвет основы</label>{{ form.color }}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="{{ form.image.id_for_label }}">Изображение (URL)</label>
+          {{ form.image }}
+          <div class="form-text">Формат: https://…/F053D_BLUE_BLUE.jpg (или загрузите файл ниже)</div>
+        </div>
+
+        <!-- Поле загрузки файла (уйдет в Supabase, URL запишется в image) -->
+        <div class="col-12">
+          <label class="form-label" for="{{ form.upload.id_for_label }}">Загрузить файл</label>
+          {{ form.upload }}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="{{ form.name.id_for_label }}">Название ковра</label>{{ form.name }}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.loom_width.id_for_label }}">Ширина станка</label>{{ form.loom_width }}
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.pile_height.id_for_label }}">Высота ворса</label>{{ form.pile_height }}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.quality.id_for_label }}">Качество</label>{{ form.quality }}
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.weight.id_for_label }}">Вес (кг/м²)</label>{{ form.weight }}
+        </div>
+
+        <!-- Состав нитей -->
+        <div class="col-12">
+          <label class="form-label">Состав</label>
+          <div class="row g-2">
+            <div class="col-6 col-md-2">{{ form.thread_percent_left }}</div>
+            <div class="col-6 col-md-4">{{ form.thread_material_left }}</div>
+            <div class="col-6 col-md-2">{{ form.thread_percent_right }}</div>
+            <div class="col-6 col-md-4">{{ form.thread_note }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Правая колонка: превью -->
+    <div class="col-12 col-md-5">
+      <div class="preview-card">
+        <div class="small text-muted mb-2">Превью</div>
+        <img id="carpetPreview"
+             src="{% if form.instance %}{{ form.instance.get_image_url }}{% else %}{% static 'img/carpet_placeholder.jpg' %}{% endif %}"
+             alt="preview"
+             onerror="this.onerror=null;this.src='{% static 'img/carpet_placeholder.jpg' %}'">
+      </div>
     </div>
 
     <!-- Кнопки -->
-    <div class="col-12 d-grid gap-2">
-      <button type="submit"
-              class="btn btn-primary btn-lg btn-save btn-hover">
-        Сохранить
-      </button>
-      {% if carpet %}
-        <a href="{% url 'collection_detail' carpet.collection.id %}"
-           class="btn btn-outline-secondary btn-lg btn-cancel btn-hover">
-          Отмена
-        </a>
-      {% elif collection_id %}
-        <a href="{% url 'collection_detail' collection_id %}"
-           class="btn btn-outline-secondary btn-lg btn-cancel btn-hover">
-          Отмена
-        </a>
-      {% else %}
-        <a href="{% url 'collection_cards' %}"
-           class="btn btn-outline-secondary btn-lg btn-cancel btn-hover">
-          Отмена
-        </a>
-      {% endif %}
+    <div class="col-12 d-grid gap-2 mt-2">
+      <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+      <a href="{% url 'collection_cards' %}" class="btn btn-outline-secondary btn-lg">Отмена</a>
     </div>
   </form>
 </div>
+
+<!-- Небольшой JS: обновляет превью при вводе URL или выборе файла -->
+<script>
+(function(){
+  const urlInput = document.getElementById('{{ form.image.id_for_label }}');
+  const fileInput = document.getElementById('{{ form.upload.id_for_label }}');
+  const img = document.getElementById('carpetPreview');
+  const placeholder = "{% static 'img/carpet_placeholder.jpg' %}";
+
+  if (urlInput) {
+    urlInput.addEventListener('input', () => {
+      const v = (urlInput.value || '').trim();
+      img.src = v || placeholder;
+    });
+  }
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (f) img.src = URL.createObjectURL(f);
+    });
+  }
+})();
+</script>
 {% endblock %}
