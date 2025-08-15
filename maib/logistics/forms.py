@@ -8,8 +8,8 @@ class BatchForm(forms.ModelForm):
         fields = [
             'arrival_date',
             'status',
-            'storage_location',      # ← Место хранения (склад)
-            'destination',           # ← Пункт назначения (куда отправляется)
+            'storage_location',
+            'destination',
         ]
         widgets = {
             'arrival_date': forms.DateInput(attrs={
