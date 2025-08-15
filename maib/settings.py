@@ -1,31 +1,18 @@
-"""
-Django settings for maib project.
-"""
-
 from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 load_dotenv(BASE_DIR / ".env")
 
+# Секреты из окружения
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me")
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-
-
-
-SECRET_KEY = 'django-insecure-(5kz$0m7qyj25j$2*d4+ml#vc@$r(1oi_poydg94-bewn*g(j%'
-DEBUG = True
-
-ALLOWED_HOSTS = [
-    'catalognew-production.up.railway.app',
-    '127.0.0.1',
-    'localhost'
-]
-
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 CSRF_TRUSTED_ORIGINS = [
-    'https://catalognew-production.up.railway.app',
+    f"https://{host.strip()}" for host in ALLOWED_HOSTS if host.strip()
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -75,14 +62,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'maib.wsgi.application'
 
-
 DATABASES = {
     'default': dj_database_url.parse(
-        "postgresql://postgres:ueSBInEYPSeZkOPPDanzEWAxvLyvPQjv@switchyard.proxy.rlwy.net:49336/railway",
+        os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"),
         conn_max_age=600
     )
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -91,20 +76,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
-
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'   # сюда будет собираться collectstatic
-STATICFILES_DIRS = [
-    BASE_DIR / "maib" / "static",
-]
-
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / "maib" / "static"]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
@@ -114,11 +93,11 @@ LOGIN_REDIRECT_URL = '/'
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-SUPABASE_PUBLIC_BASE = "https://duzoqsgaglqlazqrpoun.supabase.co/storage/v1/object/public/balcatalog/public"
+
+# Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "balcatalog")
 SUPABASE_FOLDER = os.getenv("SUPABASE_FOLDER", "public")
 SUPABASE_PUBLIC_BASE = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{SUPABASE_FOLDER}"
